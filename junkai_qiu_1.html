@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>junkai_qiu_1</title>
+	<style>
+		h1{
+			font-family: sans-serif; 
+			background-color: black; 
+			color: white;
+		}
+		h2{
+			font-family: sans-serif;
+		}
+		#updiv{
+			border-bottom: 1px solid #e3e3e3;
+		}
+		ul{
+			list-style-type: none;
+			padding: 0;
+		}
+	</style>
+</head>
+<body>
+	<h1> Gapiminder - Wealth and Health of Nations </h1>
+	<div id="updiv" >
+		<h2 >Countries</h2>
+		<label>Name</label>
+		<input type="text" id="input" style="width: 150px;"/>
+		<input type="button" value="Add" id="button"/>
+	</div>
+	<div>
+		<ul id="list" />
+	</div>
+	<script type="text/javascript">
+		document.getElementById("button").addEventListener('click', function () {
+		    var list = document.getElementById('list');
+		    var text = document.getElementById('input').value;
+		    if(text != ""){
+		    	for(var i=0, listChildren=list.children; i< listChildren.length; i++){
+		    		if(text === listChildren[i].innerHTML){
+		    			return;
+		    		}
+		    	}
+		    	var item = document.createElement('li');
+		    	item.innerHTML = text;
+		    	list.appendChild(item);
+		    }
+		});	
+	</script>
+</body>
+</html>
