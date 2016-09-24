@@ -11,9 +11,6 @@
 		h2{
 			font-family: sans-serif;
 		}
-		#updiv{
-			border-bottom: 1px solid #e3e3e3;
-		}
 		ul{
 			list-style-type: none;
 			padding: 0;
@@ -22,30 +19,29 @@
 </head>
 <body>
 	<h1> Gapiminder - Wealth and Health of Nations </h1>
-	<div id="updiv" >
-		<h2 >Countries</h2>
-		<label>Name</label>
-		<input type="text" id="input" style="width: 150px;"/>
-		<input type="button" value="Add" id="button"/>
-	</div>
 	<div>
-		<ul id="list" />
+		<h2 >Countries</h2>
 	</div>
-	<script type="text/javascript">
-		document.getElementById("button").addEventListener('click', function () {
-		    var list = document.getElementById('list');
-		    var text = document.getElementById('input').value;
-		    if(text != ""){
-		    	for(var i=0, listChildren=list.children; i< listChildren.length; i++){
-		    		if(text === listChildren[i].innerHTML){
-		    			return;
-		    		}
-		    	}
-		    	var item = document.createElement('li');
-		    	item.innerHTML = text;
-		    	list.appendChild(item);
-		    }
-		});	
-	</script>
+	<div id='viz' />
+	
 </body>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+	var raw = [];
+	d3.json("https://raw.githubusercontent.com/CristianFelix/infoviz/master/gapminder.json", function(error, data){
+		raw = data;
+		render();
+	});
+	
+	function render(){
+		d3.select("#viz")
+			.selectAll("div")
+			.data(raw)
+			.enter()
+			.append("div")
+			.text(function(d){return d.name;});
+	}
+
+</script>
 </html>
