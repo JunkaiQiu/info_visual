@@ -11,31 +11,90 @@
 		h2{
 			font-family: sans-serif;
 		}
+		#viz{
+			width: inherit;
+			float:left;
+		}
+		#svg{
+			float: left;
+		}
 	</style>
 </head>
 <body>
 	<h1> Gapiminder - Wealth and Health of Nations </h1>
 	<div>
 		<h2 >Countries</h2>
+		<div id='viz' />
 	</div>
-	<div id='viz' />
+	<div id='svg'>
+		<svg width="600" height="400">
+			<g id='dotgroup'/>
+		</svg>
+	</div>
 </body>
 
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 	var raw = [];
-	d3.json("https://raw.githubusercontent.com/CristianFelix/infoviz/master/gapminder.json", function(error, data){
-		raw = data;
+	d3.json("https://raw.githubusercontent.com/CristianFelix/infoviz/master/Week%203/newData.json", function(error, data){
+		raw = data.filter(function(d){
+			return d.income[2008] != undefined &&
+				d.lifeExpectancy[2008] != undefined &&
+				d.population[2008] != undefined;
+		});
 		render();
 	});
+
+	var width = 600,
+        height = 400,
+        margin = { top: 20, left: 20, right: 20, bottom: 20},
+        innerWidth = width - margin.left - margin.right,
+        innerHeight = height - margin.top - margin.bottom;
+
+    var dotGroup = d3.select("#dotgroup");
+
+    var xScale = d3.scale.linear()
+            .range([0, innerWidth]),
+        yScale = d3.scale.linear()
+        .range([innerHeight, 0]),
+        rScale = d3.scale.linear()
+        .range([5,20]);
+
+    var colorScale = d3.scale.category10();
 	
+	dotGroup.attr("transform", 
+                 "translate(" + margin.left + "," + margin.top + ")");
+
 	function render(){
+		/* countries list */
 		d3.select("#viz")
 			.selectAll("div")
 			.data(raw)
 			.enter()
 			.append("div")
 			.text(function(d){return d.name;});
+
+		/* Dot group */
+		/* One dot for each country, x position to the income, y position to life expectancy, 
+		   size to population, color to region */
+		xScale.domain(d3.extent(raw, function(d,i) { return d.income[2008]}));
+        yScale.domain(d3.extent(raw, function(d,i) { return d.lifeExpectancy[2008]}));
+        rScale.domain(d3.extent(raw, function(d,i) { return d.population[2008]}));
+
+		d3.select("#dotgroup")
+			.selectAll("circle")
+			.data(raw)
+			.enter()
+			.append("circle")
+			.attr("r",
+				function(d, i) {return rScale(d.population[2008]) })
+			.attr("cx",
+				function(d, i) { return xScale(d.income[2008]) })
+			.attr("cy",
+				function(d, i) { return yScale(d.lifeExpectancy[2008]) })
+			.attr("fill",
+				function(d, i) { return colorScale(d.region) })
+			.attr("opacity", 0.8);
 	}
 
 </script>
