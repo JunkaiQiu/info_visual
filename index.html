@@ -15,6 +15,10 @@
 			list-style: none;
 			padding: 10px;
 			float:left;
+			width: 128px;
+		}
+		circle{
+			opacity: 0.7
 		}
 		.domain{
 			fill: none;
@@ -26,6 +30,21 @@
 		.tick line{
 			stroke: #ccc;
 		}
+		#tooltip{
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            visibility: hidden;
+            border: solid 1px black;
+            transition: all 0.4s;
+            opacity: 0;
+		}
+		input{
+			width: 500px;
+			position: absolute;
+		    left: 156px;
+    		top: 532px
+		}
 	</style>
 </head>
 <body>
@@ -34,16 +53,21 @@
 		<h2 >Countries</h2>
 		<div id='countryList' />
 	</div>
-	<div id='svg'>
-		<svg width="500" height="400">
-			<g id='chart'/>
-		</svg>
-	</div>
+
+	<svg id ='chart'/>
+	<input type='range'
+			min="1900"
+			max="2009"
+			value="2008"
+			id="yearSelect"
+			onChange="setYear(this.value)">
+	<div id="tooltip">tooltip</div>
 </body>
 
-<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script>
 	//parameters
+	
 	var year = 2008;
 	var width = 500;
     var height = 400;
@@ -52,29 +76,76 @@
     var innerHeight = height - margin.top - margin.bottom;
 
     //global variables
+    var result = [];
     var chart = d3.select("#chart");
 	var list = d3.select("#countryList");
+
+	var yearLabel = 
+		chart.append("text")
+			.text(year)
+			.style({"font-size": 50, fill:"#ccc"})
+			.attr("dx",50)
+			.attr("dy",70)
+
 	var xAxisGroup = chart.append("g")
-		.attr("transform", "translate(" + 0 + "," + innerHeight + ")");
+		.attr("transform", "translate(" 
+			+ margin.left 
+			+ "," 
+			+ (innerHeight + margin.top) 
+			+ ")");
 	var yAxisGroup = chart.append("g")
-		.attr("transform", "translate(" + 0 + "," + 0 + ")");
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 	var dotGroup = chart.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 	
-	function renderList(data){
+	//Highlight
+	function highlight(name){
+		dotGroup.selectAll("circle").style("stroke", function(d,i){
+			return d.name == name ? "black" : undefined;
+		})
 		list.selectAll("li")
-			.data(data)
-			.enter()
+		.style("background-color",function(d,i){
+			return d.name == name ? "black" : undefined;
+		})
+		.style("color",function(d,i){
+			return d.name == name ? "white" : undefined;
+		});
+	}
+
+	function unhighlight(){
+		dotGroup.selectAll("circle").style('stroke', undefined);
+		list.selectAll("li")
+		.style('background-color', undefined)
+		.style('color', undefined);
+	}
+
+	//Set Year
+	function setYear(newYear){
+		year = newYear;
+		yearLabel.text(year);
+		render(result);
+	}
+
+	function renderList(data){
+		var selection = list.selectAll("li")
+			.data(data, function(d){return d.name;});
+
+		selection.enter()
 			.append("li")
 			.attr("class","listItem")
 			.text(function(d){ return d.name})
+			.on('mouseenter',function(d,i){
+				highlight(d.name);
+			})
+			.on('mouseleave',function(d,i){
+				unhighlight();
+			})
+		selection.exit().remove();
 	}
 
 	function renderChart(data){
 		chart.attr("width", width)
-			.attr("height", height)
-			.attr("transform", 
-                 "translate(" + margin.left + "," + margin.top + ")");
+			.attr("height", height);
 
 		var xScale = d3.scale.linear()
             .range([0, innerWidth])
@@ -92,6 +163,10 @@
 
         var xAxis = d3.svg.axis()
         	.tickSize(-360)
+        	.tickFormat(function(d){
+        		var prefix = d3.formatPrefix(d);
+        		return prefix.scale(d) + prefix.symbol;
+        	})
         	.scale(xScale)
         	.orient("bottom");
 
@@ -103,10 +178,31 @@
         xAxisGroup.call(xAxis);
         yAxisGroup.call(yAxis);
 
-		chart.selectAll("circle")
-			.data(data)
-			.enter()
+		var selection = dotGroup.selectAll("circle")
+			.data(data, function(d){return d.name;})
+		selection.enter()
 			.append("circle")
+			
+			.attr("opacity", 0.9)
+			.on('mouseenter',function(d,i){
+				highlight(d.name);
+				d3.select("#tooltip").style({
+					visibility: "visible",
+					top: d3.event.clientY + "px",
+					left: d3.event.clientX + "px",
+					opacity: 1
+				}).text(d.name)
+			})
+			.on("mouseleave",function(d,i){
+				unhighlight();
+				d3.select("#tooltip").style({
+					visibility: "hidden",
+					opacity: 0
+				});
+			});
+
+		selection.exit().remove();
+		selection.transition()
 			.attr("r",
 				function(d, i) {return Math.sqrt(rScale(d.population[year])/Math.PI) })
 			.attr("cx",
@@ -115,7 +211,6 @@
 				function(d, i) { return yScale(d.lifeExpectancy[year]) })
 			.attr("fill",
 				function(d, i) { return colorScale(d.region) })
-			.attr("opacity", 0.9);
 	}
 
 
@@ -124,12 +219,17 @@
 			return d.income[year] && d.lifeExpectancy[year] && d.population[year];
 		});
 
+		filterData.sort(function(a,b){
+			return d3.ascending(a.name, b.name);
+		})
+
 		renderList(filterData);
 		renderChart(filterData);
 		
 	}
 
 	d3.json("https://raw.githubusercontent.com/CristianFelix/infoviz/master/Week%203/newData.json", function(error, data){
+		result = data;
 		render(data);
 	});
 
