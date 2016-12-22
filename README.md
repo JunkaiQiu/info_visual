@@ -1,3 +1,2 @@
-# info_visual
-
-Github for the information visualization D3 LAB
+# Email-Response-Time_8
+Email Response Time - 8
